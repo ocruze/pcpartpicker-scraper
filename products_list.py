@@ -5,18 +5,17 @@ from pprint import pprint
 import bs4
 import site
 
-url = "https://pcpartpicker.com/products/cpu/#page="
-url = 'https://pcpartpicker.com/products/video-card/#page='
+base_url = 'https://pcpartpicker.com'
 max_page = -1
-csv_delimiter = ','
+list_filename_suffix = '-list.csv'
 
 
-def scrape():
+def scrape(product_type):
 
     browser = webdriver.Firefox()
-    # browser.minimize_window()
+    browser.minimize_window()
 
-    browser.get(url + str(1))
+    browser.get(base_url + '/products/' + product_type + '/#page=' + str(1))
     time.sleep(5)
     page_content = browser.page_source
     soup = bs4.BeautifulSoup(page_content, 'html.parser')
@@ -24,52 +23,42 @@ def scrape():
     pages = soup.find('section', {'id': 'module-pagination'}).find_all('a')
     max_page = pages[len(pages) - 1].get_text()
     max_page = int(max_page)
+    print('Scraping product type: ' + product_type)
     print('Number of pages to be scraped: ' + str(max_page))
 
     products_list_scraped = []
-    for page in range(1, 6):
-        browser.get(url + str(page))
+    for page in range(1, 3):
+        browser.get(base_url + '/products/' +
+                    product_type + '/#page=' + str(page))
         time.sleep(5)
         print('Scraping page: ' + str(page))
         page_content = browser.page_source
         soup = bs4.BeautifulSoup(page_content, 'html.parser')
-        products_list_scraped += scrape_data(soup)
+        products_list_scraped += scrape_products_list(soup)
 
     csv = '\n'.join(products_list_scraped)
 
     browser.quit()
 
-    csv_file = open('scraped_data/video-card.csv', 'w')
+    csv_file = open('scraped_data/' + product_type + list_filename_suffix, 'w')
     csv_file.write(csv)
     csv_file.close()
 
 
-def scrape_data(soup):
+def scrape_products_list(soup):
     table = soup.find('table', {'id': 'paginated_table'})
     products_list = table.find('tbody').find_all('tr')
 
-    products_list_scraped = []
+    product_codes = []
 
     for product in products_list:
-        product_specs = product.find_all('td')
-        product_specs.pop(0)  # removing the checkbox
-        product_specs_array = []
+        a = product.find('td', {'class': 'td__name'}).find('a')
+        link = a['href']
 
-        for spec in product_specs:
-            remove_element(spec.find('div', {'class': 'td__rating'}))
-            remove_element(spec.find('h6'))
-            remove_element(spec.find('button'))
-
-            product_specs_array.append(spec.get_text().strip())
-
-        products_list_scraped.append(csv_delimiter.join(product_specs_array))
-    return products_list_scraped
+        product_codes.append(link.split('/')[2])
+    return product_codes
 
 
 def remove_element(element):
     if (element is not None):
         element.decompose()
-
-
-if __name__ == '__main__':
-    scrape()

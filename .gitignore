@@ -1,3 +1,4 @@
 .vscode/
 geckodriver.log
 scraped_data/*
+__pycache__
