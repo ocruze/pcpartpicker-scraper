@@ -4,10 +4,9 @@ from selenium import webdriver
 from pprint import pprint
 import bs4
 import site
+import constants
 
-base_url = 'https://pcpartpicker.com'
 max_page = -1
-list_filename_suffix = '-list.csv'
 
 
 def scrape(product_type):
@@ -15,7 +14,7 @@ def scrape(product_type):
     browser = webdriver.Firefox()
     browser.minimize_window()
 
-    browser.get(base_url + '/products/' + product_type + '/#page=' + str(1))
+    browser.get(constants.base_url + '/products/' + product_type + '/#page=' + str(1))
     time.sleep(5)
     page_content = browser.page_source
     soup = bs4.BeautifulSoup(page_content, 'html.parser')
@@ -28,7 +27,7 @@ def scrape(product_type):
 
     products_list_scraped = []
     for page in range(1, 3):
-        browser.get(base_url + '/products/' +
+        browser.get(constants.base_url + '/products/' +
                     product_type + '/#page=' + str(page))
         time.sleep(5)
         print('Scraping page: ' + str(page))
@@ -36,13 +35,13 @@ def scrape(product_type):
         soup = bs4.BeautifulSoup(page_content, 'html.parser')
         products_list_scraped += scrape_products_list(soup)
 
-    csv = '\n'.join(products_list_scraped)
+    data = '\n'.join(products_list_scraped)
 
     browser.quit()
 
-    csv_file = open('scraped_data/' + product_type + list_filename_suffix, 'w')
-    csv_file.write(csv)
-    csv_file.close()
+    file = open('scraped_data/' + product_type + constants.list_filename_suffix, 'w')
+    file.write(data)
+    file.close()
 
 
 def scrape_products_list(soup):
